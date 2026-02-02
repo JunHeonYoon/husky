@@ -5,12 +5,13 @@
   <!-- <xacro:arg name="name" default="" /> -->
 
   <xacro:arg name="prefix" default="" />
+  <xacro:arg name="as_two_wheels" default="false" />
   <xacro:arg name="gazebo_controllers" default="$(find husky_control)/config/control.yaml" />
 
   <xacro:include filename="$(find husky_description)/urdf/husky_macro.urdf.xacro" />
 
   <!-- Load husky description -->
-  <xacro:husky prefix="$(arg prefix)" />
+  <xacro:husky prefix="$(arg prefix)" as_two_wheels="$(arg as_two_wheels)" />
 
 
   <xacro:if value="$(arg is_sim)">
