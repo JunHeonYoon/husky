@@ -210,6 +210,7 @@
               <param name="max_speed">1.0</param>
               <param name="polling_timeout">10.0</param>
               <param name="serial_port">/dev/ttyUSB0</param>
+              <param name="io_rate">100.0</param>
             </xacro:unless>
           </hardware>
           <joint name="${prefix}front_left_wheel_joint">

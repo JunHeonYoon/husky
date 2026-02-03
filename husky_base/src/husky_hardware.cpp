@@ -117,7 +117,7 @@ namespace husky_base
   {
 
     horizon_legacy::Channel<clearpath::DataEncoders>::Ptr enc =
-      horizon_legacy::Channel<clearpath::DataEncoders>::requestData(polling_timeout_);
+    horizon_legacy::Channel<clearpath::DataEncoders>::requestData(polling_timeout_);
     if (enc)
     {
       RCLCPP_DEBUG(
@@ -190,6 +190,103 @@ namespace husky_base
     return RIGHT;
   }
 
+bool HuskyHardware::tryReadStateCache(std::vector<double>& pos_out, std::vector<double>& vel_out)
+{
+  // seqlock read: retry if writer is in-progress or data changed mid-read
+  for (int k = 0; k < 3; ++k)
+  {
+    const uint64_t s0 = state_cache_.seq.load(std::memory_order_acquire);
+    if (s0 & 1ULL) continue; // writer in progress
+
+    pos_out = state_cache_.pos;
+    vel_out = state_cache_.vel;
+
+    const uint64_t s1 = state_cache_.seq.load(std::memory_order_acquire);
+    if (s0 == s1) return true;
+  }
+  return false;
+}
+
+void HuskyHardware::startIoThread()
+{
+  if (io_running_.exchange(true)) return;
+  io_thread_ = std::thread(&HuskyHardware::ioLoop, this);
+}
+
+void HuskyHardware::stopIoThread()
+{
+  if (!io_running_.exchange(false)) return;
+  if (io_thread_.joinable()) io_thread_.join();
+
+  // best-effort: stop robot
+  try {
+      horizon_legacy::controlSpeed(0.0, 0.0, max_accel_, max_accel_);
+  } catch (...) {}
+}
+
+void HuskyHardware::ioLoop()
+{
+  auto next = std::chrono::steady_clock::now();
+  while (io_running_.load(std::memory_order_relaxed))
+  {
+    next += io_period_ns_;
+
+    // 1) READ encoders (blocking allowed here)
+    horizon_legacy::Channel<clearpath::DataEncoders>::Ptr enc =
+      horizon_legacy::Channel<clearpath::DataEncoders>::requestData(polling_timeout_);
+
+    // 2) READ speed (blocking allowed here)
+    horizon_legacy::Channel<clearpath::DataDifferentialSpeed>::Ptr speed =
+      horizon_legacy::Channel<clearpath::DataDifferentialSpeed>::requestData(polling_timeout_);
+
+    if (enc && speed)
+    {
+      // Build local pos/vel vectors (same size as joints)
+      std::vector<double> pos_local = state_cache_.pos;
+      std::vector<double> vel_local = state_cache_.vel;
+
+      // Use existing rollover protection logic, but applied on locals.
+      for (auto i = 0u; i < pos_local.size(); i++)
+      {
+        const double travel = enc->getTravel(isLeft(info_.joints[i].name));
+        const double ang = linearToAngular(travel);
+        const double delta = ang - pos_local[i] - hw_states_position_offset_[i];
+
+        if (std::abs(delta) < 1.0f)
+        {
+          pos_local[i] += delta;
+        }
+        else
+        {
+          hw_states_position_offset_[i] += delta;
+          RCLCPP_WARN(rclcpp::get_logger(HW_NAME), "Dropping overflow measurement from encoder");
+        }
+
+        if (isLeft(info_.joints[i].name) == LEFT) vel_local[i] = linearToAngular(speed->getLeftSpeed());
+        else                                      vel_local[i] = linearToAngular(speed->getRightSpeed());
+      }
+
+      // Publish to cache with seqlock
+      state_cache_.seq.fetch_add(1, std::memory_order_acq_rel); // odd => write begin
+      state_cache_.pos = std::move(pos_local);
+      state_cache_.vel = std::move(vel_local);
+      state_cache_.seq.fetch_add(1, std::memory_order_release); // even => write end
+    }
+    else
+    {
+      if (!enc)   RCLCPP_ERROR(rclcpp::get_logger(HW_NAME), "Could not get encoder data");
+      if (!speed) RCLCPP_ERROR(rclcpp::get_logger(HW_NAME), "Could not get speed data");
+    }
+
+    // 3) WRITE command (non-blocking read of atomics)
+    double diff_speed_left  = angularToLinear(left_cmd_radps_.load(std::memory_order_relaxed));
+    double diff_speed_right = angularToLinear(right_cmd_radps_.load(std::memory_order_relaxed));
+    limitDifferentialSpeed(diff_speed_left, diff_speed_right);
+    horizon_legacy::controlSpeed(diff_speed_left, diff_speed_right, max_accel_, max_accel_);
+
+    std::this_thread::sleep_until(next);
+  }
+}
 
 hardware_interface::CallbackReturn HuskyHardware::on_init(const hardware_interface::HardwareInfo & info)
 {
@@ -212,12 +309,32 @@ hardware_interface::CallbackReturn HuskyHardware::on_init(const hardware_interfa
   max_speed_ = std::stod(info_.hardware_parameters["max_speed"]);
   polling_timeout_ = std::stod(info_.hardware_parameters["polling_timeout"]);
 
+
+  // Optional: io_rate (Hz) or io_period_ms
+  auto it_rate = info_.hardware_parameters.find("io_rate");
+  if (it_rate != info_.hardware_parameters.end())
+  {
+    const double hz = std::stod(it_rate->second);
+    if (hz > 1.0) io_period_ns_ = std::chrono::nanoseconds(static_cast<int64_t>(1e9 / hz));
+  }
+  auto it_ms = info_.hardware_parameters.find("io_period_ms");
+  if (it_ms != info_.hardware_parameters.end())
+  {
+    const double ms = std::stod(it_ms->second);
+    if (ms >= 1.0) io_period_ns_ = std::chrono::nanoseconds(static_cast<int64_t>(ms * 1e6));
+  }
+
+
   serial_port_ = info_.hardware_parameters["serial_port"];
 
   RCLCPP_INFO(rclcpp::get_logger(HW_NAME), "Port: %s", serial_port_.c_str());
   horizon_legacy::connect(serial_port_);
   horizon_legacy::configureLimits(max_speed_, max_accel_);
   resetTravelOffset();
+
+  // Init RT-safe cache vectors
+  state_cache_.pos.assign(info_.joints.size(), 0.0);
+  state_cache_.vel.assign(info_.joints.size(), 0.0);
 
   for (const hardware_interface::ComponentInfo & joint : info_.joints)
   {
@@ -328,12 +445,22 @@ hardware_interface::CallbackReturn HuskyHardware::on_activate(const rclcpp_lifec
 
   RCLCPP_INFO(rclcpp::get_logger(HW_NAME), "System Successfully started!");
 
+  // Sync cache with initial states
+  state_cache_.seq.fetch_add(1, std::memory_order_acq_rel);
+  state_cache_.pos = hw_states_position_;
+  state_cache_.vel = hw_states_velocity_;
+  state_cache_.seq.fetch_add(1, std::memory_order_release);
+
+  startIoThread();
+
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
 hardware_interface::CallbackReturn HuskyHardware::on_deactivate(const rclcpp_lifecycle::State & /*previous_state*/)
 {
   RCLCPP_INFO(rclcpp::get_logger(HW_NAME), "Stopping ...please wait...");
+
+  stopIoThread();
 
   RCLCPP_INFO(rclcpp::get_logger(HW_NAME), "System successfully stopped!");
 
@@ -342,22 +469,37 @@ hardware_interface::CallbackReturn HuskyHardware::on_deactivate(const rclcpp_lif
 
 hardware_interface::return_type HuskyHardware::read(const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  RCLCPP_DEBUG(rclcpp::get_logger(HW_NAME), "Reading from hardware");
+//   RCLCPP_DEBUG(rclcpp::get_logger(HW_NAME), "Reading from hardware");
 
-  updateJointsFromHardware();
+//   updateJointsFromHardware();
 
-  RCLCPP_DEBUG(rclcpp::get_logger(HW_NAME), "Joints successfully read!");
+//   RCLCPP_DEBUG(rclcpp::get_logger(HW_NAME), "Joints successfully read!");
+
+  // RT-safe: copy from cache only
+  std::vector<double> pos_tmp, vel_tmp;
+  if (tryReadStateCache(pos_tmp, vel_tmp) && pos_tmp.size() == hw_states_position_.size())
+  {
+    hw_states_position_ = std::move(pos_tmp);
+    hw_states_velocity_ = std::move(vel_tmp);
+  }
 
   return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type HuskyHardware::write(const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  RCLCPP_DEBUG(rclcpp::get_logger(HW_NAME), "Writing to hardware");
+//   RCLCPP_DEBUG(rclcpp::get_logger(HW_NAME), "Writing to hardware");
 
-  writeCommandsToHardware();
+//   writeCommandsToHardware();
 
-  RCLCPP_DEBUG(rclcpp::get_logger(HW_NAME), "Joints successfully written!");
+//   RCLCPP_DEBUG(rclcpp::get_logger(HW_NAME), "Joints successfully written!");
+
+  // RT-safe: store latest commands into atomics only
+  if (!hw_commands_.empty())
+  {
+    left_cmd_radps_.store(hw_commands_[left_cmd_joint_index_], std::memory_order_relaxed);
+    right_cmd_radps_.store(hw_commands_[right_cmd_joint_index_], std::memory_order_relaxed);
+  }
 
   return hardware_interface::return_type::OK;
 }

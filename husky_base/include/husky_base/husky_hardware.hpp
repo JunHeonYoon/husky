@@ -5,6 +5,10 @@
 #include <string>
 #include <vector>
 
+#include <atomic>
+#include <thread>
+#include <chrono>
+
 #include "hardware_interface/handle.hpp"
 #include "hardware_interface/hardware_info.hpp"
 #include "hardware_interface/system_interface.hpp"
@@ -67,6 +71,31 @@ private:
   std::vector<double> hw_states_position_, hw_states_position_offset_, hw_states_velocity_;
 
   uint8_t left_cmd_joint_index_, right_cmd_joint_index_;
+
+   // Async IO worker
+   std::thread io_thread_;
+   std::atomic<bool> io_running_{false};
+   std::chrono::nanoseconds io_period_ns_{std::chrono::milliseconds(10)}; // default 100 Hz
+ 
+   // Latest wheel commands (rad/s, joint-space command interface domain)
+   std::atomic<double> left_cmd_radps_{0.0};
+   std::atomic<double> right_cmd_radps_{0.0};
+ 
+   // RT-safe state cache (seqlock)
+   struct StateCache
+   {
+     // seqlock sequence counter: writer increments before/after write
+     std::atomic<uint64_t> seq{0};
+     // cached joint states (rad, rad/s), size = info_.joints.size()
+     std::vector<double> pos;
+     std::vector<double> vel;
+   };
+   StateCache state_cache_;
+ 
+   void startIoThread();
+   void stopIoThread();
+   void ioLoop();
+   bool tryReadStateCache(std::vector<double>& pos_out, std::vector<double>& vel_out);
 };
 
 }  // namespace husky_base
