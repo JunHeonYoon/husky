@@ -477,12 +477,15 @@ hardware_interface::return_type HuskyHardware::read(const rclcpp::Time & /*time*
 
   // RT-safe: copy from cache only
   std::vector<double> pos_tmp, vel_tmp;
-  if (tryReadStateCache(pos_tmp, vel_tmp) && pos_tmp.size() == hw_states_position_.size())
+  if (tryReadStateCache(pos_tmp, vel_tmp) &&
+      pos_tmp.size() == hw_states_position_.size() &&
+      vel_tmp.size() == hw_states_velocity_.size())
   {
-    hw_states_position_ = std::move(pos_tmp);
-    hw_states_velocity_ = std::move(vel_tmp);
+    for (size_t i = 0; i < hw_states_position_.size(); ++i) {
+      hw_states_position_[i] = pos_tmp[i];
+      hw_states_velocity_[i] = vel_tmp[i];
+    }
   }
-
   return hardware_interface::return_type::OK;
 }
 
