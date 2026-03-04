@@ -1,0 +1,69 @@
+<?xml version="1.0"?>
+
+<mujoco xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <!-- Decorative meshes as collisionless geoms -->
+    <xacro:property name="M_PI" value="3.14159"/>
+
+    <xacro:macro name="husky_decorate">
+        <xacro:property name="husky_front_bumper_extend" value="$(optenv HUSKY_FRONT_BUMPER_EXTEND 0)"/>
+        <xacro:property name="husky_rear_bumper_extend" value="$(optenv HUSKY_REAR_BUMPER_EXTEND 0)"/>
+
+        <!-- top chassis -->
+        <body name="top_chassis_link">
+            <geom class="visual" pos="0 0 0" type="mesh" mesh="top_chassis" rgba="0.8 0.8 0.0 1.0"/>
+        </body>
+
+        <!-- optional user rails -->
+        <xacro:if value="$(optenv HUSKY_USER_RAIL_ENABLED true)">
+            <body name="user_rail_link" pos="0.272 0 0.245">
+                    <geom class="visual" type="mesh" mesh="user_rail" material="husky_black"/>
+            </body>
+        </xacro:if>
+
+        <!-- front bumper -->
+         <body name="front_bumper_link" pos="${0.48 - husky_rear_bumper_extend} 0 0.091">
+            <geom class="visual" type="mesh" mesh="bumper" rgba="0.2 0.2 0.2 1.0" euler="${M_PI/2} 0 0"/>
+        </body>
+
+        <xacro:if value="${husky_front_bumper_extend}">
+            <body name="front_bumper_extension_link" pos="${0.48 + husky_front_bumper_extend} 0 0.091">
+                    <geom class="visual" type="mesh" mesh="bumper" rgba="0.2 0.2 0.2 1.0" euler="${M_PI/2} 0 0"/>
+            </body>
+        </xacro:if>
+
+        <!-- rear bumper (rotated pi around z) -->
+        <body name="rear_bumper_link" pos="${-0.48 - husky_rear_bumper_extend} 0 0.091">
+            <geom class="visual" type="mesh" mesh="bumper" rgba="0.2 0.2 0.2 1.0" euler="${M_PI/2} ${M_PI} 0"/>
+        </body>
+
+        <xacro:if value="${husky_rear_bumper_extend}">
+            <body name="rear_bumper_extension_link" pos="${-0.48 - husky_rear_bumper_extend} 0 0.091">
+                <geom class="visual" type="mesh" mesh="bumper" rgba="0.2 0.2 0.2 1.0" euler="${M_PI/2} ${M_PI} 0"/>
+            </body>
+        </xacro:if>
+
+        <!-- top plate -->
+        <xacro:if value="$(optenv HUSKY_TOP_PLATE_ENABLED true)">
+
+            <xacro:if value="$(optenv HUSKY_LARGE_TOP_PLATE false)">
+                <body name="top_plate_link" pos="0.0812 0 0.225">
+                    <geom class="visual" type="mesh" mesh="large_top_plate" material="husky_black"/>
+                    <body name="top_plate_front_link" pos="0.4125 0 0.00672"/>
+                    <body name="top_plate_rear_link"  pos="-0.4125 0 0.00672"/>
+                </body>
+            </xacro:if>
+
+            <xacro:unless value="$(optenv HUSKY_LARGE_TOP_PLATE false)">
+                <body name="top_plate_link" pos="0.0812 0 0.245">
+                    <geom class="visual" type="mesh" mesh="top_plate" material="husky_black"/>
+                    <body name="top_plate_front_link" pos="0.36367 0 0.00639"/>
+                    <body name="top_plate_rear_link"  pos="-0.36633 0 0.00639"/>
+                </body>
+            </xacro:unless>
+
+        </xacro:if>
+        
+    </xacro:macro>
+
+</mujoco>

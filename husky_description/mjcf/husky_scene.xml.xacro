@@ -1,0 +1,67 @@
+<?xml version="1.0"?>
+
+<mujoco model="husky" xmlns:xacro="http://ros.org/wiki/xacro">
+    <xacro:arg name="prefix" default="" />
+    <xacro:arg name="as_two_wheels" default="false" />
+
+    <xacro:include filename="$(find husky_description)/mjcf/husky_macro.xml.xacro" />
+    <xacro:include filename="$(find husky_description)/mjcf/wheel_actuator.xml.xacro" />
+
+    <compiler angle="radian" meshdir="assets"/>
+    <option timestep="0.001" integrator="implicit"/>
+
+    <statistic center="0.2 0 0.4" extent=".8"/>
+
+    <visual>
+        <headlight diffuse="0.6 0.6 0.6" ambient="0.3 0.3 0.3" specular="0 0 0"/>
+        <rgba haze="0.15 0.25 0.35 1"/>
+        <global azimuth="120" elevation="-20"/>
+    </visual>
+
+    <default>
+        <default class="husky">
+            <material specular="0.5" shininess="0.25"/>
+            <joint armature="0.1" damping="1"/>
+            <position inheritrange="1"/>
+            <default class="visual">
+                <geom type="mesh" group="2" contype="0" conaffinity="0"/>
+            </default>
+            <default class="collision">
+                <geom type="mesh" group="3" mass="0" density="0"/>
+            </default>
+            <site size="0.001" rgba="0.5 0.5 0.5 0.3" group="4"/>
+        </default>
+    </default>
+    
+    <asset>
+        <!-- Scene sky/ground textures -->
+        <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+        <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" markrgb="0.8 0.8 0.8" width="300" height="300"/>
+        <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+
+        <material class="husky" name="husky_orange" rgba="0.996 0.941 0.412 1.0"/>
+        <material class="husky" name="husky_black"  rgba="0.231 0.231 0.231 1.0"/>
+
+        <mesh name="base_link"       file="$(find husky_description)/meshes/base_link.stl"/>
+        <mesh name="wheel"           file="$(find husky_description)/meshes/wheel.stl"/>
+        <mesh name="bumper"          file="$(find husky_description)/meshes/bumper.obj"/>
+        <mesh name="top_chassis"     file="$(find husky_description)/meshes/top_chassis.stl"/>
+        <mesh name="top_plate"       file="$(find husky_description)/meshes/top_plate.stl"/>
+        <mesh name="large_top_plate" file="$(find husky_description)/meshes/large_top_plate.obj"/>
+        <mesh name="user_rail"       file="$(find husky_description)/meshes/user_rail.stl"/>
+    </asset>
+
+    <worldbody>
+        <light pos="0 0 1.5" dir="0 0 -1" directional="true"/>
+        <geom name="floor" size="0 0 0.05" type="plane" material="groundplane"/>
+        <body name="$(arg prefix)husky_root" pos="0 0 0.1">
+            <joint name="world_joint" type="free" stiffness="0" damping="0" frictionloss="0" armature="0" />
+            <xacro:husky prefix="$(arg prefix)"
+                         as_two_wheels="$(arg as_two_wheels)"/>
+        </body>
+    </worldbody>
+
+    <xacro:husky_wheel_actuator prefix="$(arg prefix)"
+                                as_two_wheels="$(arg as_two_wheels)"/>
+
+</mujoco>

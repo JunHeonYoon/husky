@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+    <xacro:macro name="husky_wheel_actuator" params="prefix as_two_wheels:=false">
+
+        <xacro:if value="${as_two_wheels}">
+            <actuator>
+                <velocity name="${prefix}left_wheel_actuator"  joint="${prefix}left_wheel_joint"  kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
+                <velocity name="${prefix}right_wheel_actuator" joint="${prefix}right_wheel_joint" kv="140" forcerange="-500 500" ctrlrange="-10 10"/> 
+            </actuator>
+
+            <equality>
+                <joint name="${prefix}left_wheels_gear1"
+                    joint1="${prefix}left_wheel_joint"
+                    joint2="${prefix}front_left_wheel_dummy_joint"
+                    polycoef="0 1 0 0 0"/>
+
+                <joint name="${prefix}left_wheels_gear1"
+                    joint1="${prefix}left_wheel_joint"
+                    joint2="${prefix}rear_left_wheel_dummy_joint"
+                    polycoef="0 1 0 0 0"/>
+
+                <joint name="${prefix}right_wheels_gear1"
+                    joint1="${prefix}right_wheel_joint"
+                    joint2="${prefix}front_right_wheel_dummy_joint"
+                    polycoef="0 1 0 0 0"/>
+
+                <joint name="${prefix}right_wheels_gear1"
+                    joint1="${prefix}right_wheel_joint"
+                    joint2="${prefix}rear_right_wheel_dummy_joint"
+                    polycoef="0 1 0 0 0"/>
+            </equality>
+
+        </xacro:if>
+        
+        <xacro:unless value="${as_two_wheels}">
+            <actuator>
+                <velocity name="${prefix}front_left_wheel_actuator"  joint="${prefix}front_left_wheel_joint"  kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
+                <velocity name="${prefix}front_right_wheel_actuator" joint="${prefix}front_right_wheel_joint" kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
+                <velocity name="${prefix}rear_left_wheel_actuator"   joint="${prefix}rear_left_wheel_joint"   kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
+                <velocity name="${prefix}rear_right_wheel_actuator"  joint="${prefix}rear_right_wheel_joint"  kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
+            </actuator>
+
+            <equality>
+                <joint name="left_wheels_gear"
+                    joint1="${prefix}front_left_wheel_joint"
+                    joint2="${prefix}front_right_wheel_joint"
+                    polycoef="0 1 0 0 0"/>
+
+                <joint name="right_wheels_gear"
+                    joint1="${prefix}rear_left_wheel_joint"
+                    joint2="${prefix}rear_right_wheel_joint"
+                    polycoef="0 1 0 0 0"/>
+            </equality>
+        </xacro:unless>
+
+    </xacro:macro>
+</robot>

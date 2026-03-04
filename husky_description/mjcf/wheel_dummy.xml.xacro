@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="husky_wheel">
+    <xacro:macro name="husky_wheel_dummy" params="wheel_prefix xyz:='0 0 0' rpy:='0 0 0'">
+        <body name="${wheel_prefix}_wheel_dummy"  pos="${xyz}" euler="${rpy}">
+            <inertial mass="0.0001" pos="0 0 0" diaginertia="1e-6 1e-6 1e-6"/>
+            <geom class="visual" pos="0 0 0" quat="0 0 0 1" mesh="wheel" material="husky_black"/>
+            <joint name="${wheel_prefix}_wheel_dummy_joint" type="hinge" axis="0 1 0" limited="false"/>
+        </body>
+    </xacro:macro>
+</robot>

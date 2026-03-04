@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+    <xacro:property name="M_PI" value="3.14159"/>
+
+    <xacro:property name="husky_front_bumper_extend" value="$(optenv HUSKY_FRONT_BUMPER_EXTEND 0)" />
+    <xacro:property name="husky_rear_bumper_extend" value="$(optenv HUSKY_REAR_BUMPER_EXTEND 0)" />
+    <!-- Base Size -->
+    <xacro:property name="base_x_size" value="0.98740000" /> <!-- 0.98740000 -->
+    <xacro:property name="base_y_size" value="0.57090000" /> <!-- 0.57090000 -->
+    <xacro:property name="base_z_size" value="0.24750000" /> <!-- 0.24750000 -->
+
+    <!-- Wheel Mounting Positions -->
+    <xacro:property name="wheelbase" value="0.5120" />
+    <xacro:property name="track" value="0.5708" />
+    <xacro:property name="wheel_vertical_offset" value="0.03282" />
+
+    <!-- Wheel Properties -->
+    <xacro:property name="wheel_length" value="0.1143" />
+    <xacro:property name="wheel_radius" value="0.1651" />
+
+    <!-- Included URDF/XACRO Files -->
+  <xacro:include filename="$(find husky_description)/mjcf/decorations.xml.xacro" />
+  <xacro:include filename="$(find husky_description)/mjcf/wheel.xml.xacro" />
+  <xacro:include filename="$(find husky_description)/mjcf/wheel_dummy.xml.xacro" />
+
+    <xacro:macro name="husky" params="prefix as_two_wheels:=false">
+        <body name="${prefix}base_link" pos="0 0 ${wheel_radius - wheel_vertical_offset}">
+            <inertial pos="-0.00065 -0.085 0.062"  mass="46.034" fullinertia="0.6022 1.7386 2.0296 -0.02364 -0.1197 -0.001544"/>
+            <geom class="visual" pos="0 0 0" type="mesh" mesh="base_link" rgba="0.8 0.8 0.0 1.0"/>
+            <geom class="collision" size="${( base_x_size + husky_front_bumper_extend + husky_rear_bumper_extend)/2 } ${base_y_size/2} ${base_z_size/2/2}" pos="${( husky_front_bumper_extend - husky_rear_bumper_extend ) / 2.0} 0 ${base_z_size/4}" type="box"/>
+            <geom class="collision" size="${base_x_size*4/5/2} ${base_y_size/2} ${(base_z_size/2-0.02)/2}" pos="0 0 ${base_z_size*3/4-0.01}" type="box"/>
+
+            <body name="${prefix}base_footprint" pos="0 0 ${wheel_vertical_offset - wheel_radius}">
+                <inertial mass="0.001" pos="0 0 0" diaginertia="1e-6 1e-6 1e-6"/>
+            </body>
+
+            <xacro:if value="$(arg as_two_wheels)">
+                <xacro:husky_wheel_dummy wheel_prefix="${prefix}front_left"
+                                         xyz="${wheelbase/2.0} ${track/2.0} ${wheel_vertical_offset}" rpy="0 0 0"/>
+                <xacro:husky_wheel_dummy wheel_prefix="${prefix}front_right"
+                                         xyz="${wheelbase/2.0} ${-track/2.0} ${wheel_vertical_offset}" rpy="0 0 0"/>
+                <xacro:husky_wheel_dummy wheel_prefix="${prefix}rear_left"
+                                         xyz="${-wheelbase/2.0} ${track/2.0} ${wheel_vertical_offset}" rpy="0 0 0"/>
+                <xacro:husky_wheel_dummy wheel_prefix="${prefix}rear_right"
+                                         xyz="${-wheelbase/2.0} ${-track/2.0} ${wheel_vertical_offset}" rpy="0 0 0"/>
+                <!-- Two actuated wheels centered per side -->
+                <body name="${prefix}left_wheel"  pos="0 ${track/2.0} ${wheel_vertical_offset}">
+                    <inertial mass="2.637" pos="0 0 0" diaginertia="0.02467 0.04411 0.02467"/>
+                    <geom class="collision" size="${wheel_radius} ${wheel_length/2}" euler="${M_PI/2} 0 0" type="cylinder"/>
+                    <joint name="${prefix}left_wheel_joint" type="hinge" axis="0 1 0" limited="false"/>
+                </body>
+                <body name="${prefix}right_wheel" pos="0 ${-track/2.0} ${wheel_vertical_offset}">
+                    <inertial mass="2.637" pos="0 0 0" diaginertia="0.02467 0.04411 0.02467"/>
+                    <geom class="collision" size="${wheel_radius} ${wheel_length/2}" euler="${M_PI/2} 0 0" type="cylinder"/>
+                    <joint name="${prefix}right_wheel_joint" type="hinge" axis="0 1 0" limited="false"/>
+                </body>
+                <!-- TODO: add support wheel for balancing -->
+            </xacro:if>
+            <xacro:unless value="${as_two_wheels}">
+                <!-- Husky wheel macros -->
+                <xacro:husky_wheel wheel_prefix="${prefix}front_left"
+                                   xyz="${wheelbase/2.0} ${track/2.0} ${wheel_vertical_offset}" rpy="0 0 0"/>
+                <xacro:husky_wheel wheel_prefix="${prefix}front_right"
+                                   xyz="${wheelbase/2.0} ${-track/2.0} ${wheel_vertical_offset}" rpy="0 0 0"/>
+                <xacro:husky_wheel wheel_prefix="${prefix}rear_left"
+                                   xyz="${-wheelbase/2.0} ${track/2.0} ${wheel_vertical_offset}" rpy="0 0 0"/>
+                <xacro:husky_wheel wheel_prefix="${prefix}rear_right"
+                                   xyz="${-wheelbase/2.0} ${-track/2.0} ${wheel_vertical_offset}" rpy="0 0 0"/>
+            </xacro:unless>
+
+            <xacro:husky_decorate />
+
+        </body>
+    </xacro:macro>
+</robot>
