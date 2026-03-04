@@ -4,8 +4,8 @@
 
         <xacro:if value="${as_two_wheels}">
             <actuator>
-                <velocity name="${prefix}left_wheel_actuator"  joint="${prefix}left_wheel_joint"  kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
-                <velocity name="${prefix}right_wheel_actuator" joint="${prefix}right_wheel_joint" kv="140" forcerange="-500 500" ctrlrange="-10 10"/> 
+                <velocity name="${prefix}left_wheel_joint"  joint="${prefix}left_wheel_joint"  kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
+                <velocity name="${prefix}right_wheel_joint" joint="${prefix}right_wheel_joint" kv="140" forcerange="-500 500" ctrlrange="-10 10"/> 
             </actuator>
 
             <equality>
@@ -34,10 +34,10 @@
         
         <xacro:unless value="${as_two_wheels}">
             <actuator>
-                <velocity name="${prefix}front_left_wheel_actuator"  joint="${prefix}front_left_wheel_joint"  kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
-                <velocity name="${prefix}front_right_wheel_actuator" joint="${prefix}front_right_wheel_joint" kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
-                <velocity name="${prefix}rear_left_wheel_actuator"   joint="${prefix}rear_left_wheel_joint"   kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
-                <velocity name="${prefix}rear_right_wheel_actuator"  joint="${prefix}rear_right_wheel_joint"  kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
+                <velocity name="${prefix}front_left_wheel_joint"  joint="${prefix}front_left_wheel_joint"  kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
+                <velocity name="${prefix}front_right_wheel_joint" joint="${prefix}front_right_wheel_joint" kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
+                <velocity name="${prefix}rear_left_wheel_joint"   joint="${prefix}rear_left_wheel_joint"   kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
+                <velocity name="${prefix}rear_right_wheel_joint"  joint="${prefix}rear_right_wheel_joint"  kv="140" forcerange="-500 500" ctrlrange="-10 10"/>
             </actuator>
 
             <equality>
