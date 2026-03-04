@@ -1,12 +1,37 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
+from launch.substitutions import (
+    Command, FindExecutable, LaunchConfiguration,
+    PathJoinSubstitution
+)
 from launch_ros.actions import Node
+from launch_ros.parameter_descriptions import ParameterValue
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+
+    use_mujoco_arg = DeclareLaunchArgument(
+        "use_mujoco",
+        default_value="false",
+        description="true 이면 MuJoCo 시뮬레이터로 실행, false 이면 실물 하드웨어"
+    )
+    use_mujoco = LaunchConfiguration("use_mujoco")
+
+    # Get MJCF via xacro
+    mujoco_scene_content = Command(
+        [
+            PathJoinSubstitution([FindExecutable(name="xacro")]),
+            " ",
+            PathJoinSubstitution(
+                [FindPackageShare("husky_description"), "mjcf", "husky_scene.xml.xacro"]
+            ),
+            " prefix:=''",
+            " as_two_wheels:=false"
+        ]
+    )
+
     # Get URDF via xacro
     robot_description_content = Command(
         [
@@ -15,14 +40,13 @@ def generate_launch_description():
             PathJoinSubstitution(
                 [FindPackageShare("husky_description"), "urdf", "husky.urdf.xacro"]
             ),
-            " ",
-            "name:=husky",
-            " ",
-            "prefix:=''",
-            " ",
+            " name:=husky",
+            " prefix:=''",
+            " use_mujoco:=", use_mujoco,
+            " mujoco_scene:='", mujoco_scene_content, "'",
         ]
     )
-    robot_description = {"robot_description": robot_description_content}
+    robot_description = {"robot_description": ParameterValue(robot_description_content, value_type=str)}
 
     config_husky_velocity_controller = PathJoinSubstitution(
         [FindPackageShare("husky_control"),
@@ -85,6 +109,7 @@ def generate_launch_description():
 
 
     ld = LaunchDescription()
+    ld.add_action(use_mujoco_arg)
     ld.add_action(node_robot_state_publisher)
     ld.add_action(node_controller_manager)
     ld.add_action(spawn_controller)
