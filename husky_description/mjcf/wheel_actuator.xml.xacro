@@ -43,11 +43,11 @@
             <equality>
                 <joint name="left_wheels_gear"
                     joint1="${prefix}front_left_wheel_joint"
-                    joint2="${prefix}front_right_wheel_joint"
+                    joint2="${prefix}rear_left_wheel_joint"
                     polycoef="0 1 0 0 0"/>
 
                 <joint name="right_wheels_gear"
-                    joint1="${prefix}rear_left_wheel_joint"
+                    joint1="${prefix}front_right_wheel_joint"
                     joint2="${prefix}rear_right_wheel_joint"
                     polycoef="0 1 0 0 0"/>
             </equality>
