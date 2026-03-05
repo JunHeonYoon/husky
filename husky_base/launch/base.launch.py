@@ -43,7 +43,7 @@ def generate_launch_description():
             " name:=husky",
             " prefix:=''",
             " use_mujoco:=", use_mujoco,
-            " mujoco_scene:='", mujoco_scene_content, "'",
+            " mujoco_scene_xml:='", mujoco_scene_content, "'",
         ]
     )
     robot_description = {"robot_description": ParameterValue(robot_description_content, value_type=str)}

@@ -17,7 +17,7 @@
   <xacro:arg name="is_sim" default="false" />
 
   <xacro:arg name="use_mujoco" default="false" />     <!-- if use_mujoco: true, use HuskyMujocoSystem plugin -->
-  <xacro:arg name="mujoco_scene" default="" />  <!-- mujoco_scene: XML string for MJCF scene (use when use_mujoco=true) -->
+  <xacro:arg name="mujoco_scene_xml" default="" />  <!-- mujoco_scene_xml: XML string for MJCF scene (use when use_mujoco=true) -->
 
 
   <xacro:arg name="urdf_extras" default="$(optenv CPR_URDF_EXTRAS empty.urdf)" />
@@ -221,7 +221,7 @@
 
             <xacro:if value="$(arg use_mujoco)">
               <plugin>husky_mujoco/HuskyMujocoSystem</plugin>
-              <param name="mujoco_scene">$(arg mujoco_scene)</param>
+              <param name="mujoco_scene_xml">$(arg mujoco_scene_xml)</param>
               <param name="enable_viewer">true</param>
               <param name="wheel_diameter">0.3302</param>
               <param name="max_accel">5.0</param>
