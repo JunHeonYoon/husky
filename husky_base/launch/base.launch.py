@@ -15,22 +15,8 @@ def generate_launch_description():
     use_mujoco_arg = DeclareLaunchArgument(
         "use_mujoco",
         default_value="false",
-        description="true 이면 MuJoCo 시뮬레이터로 실행, false 이면 실물 하드웨어"
     )
     use_mujoco = LaunchConfiguration("use_mujoco")
-
-    # Get MJCF via xacro
-    mujoco_scene_content = Command(
-        [
-            PathJoinSubstitution([FindExecutable(name="xacro")]),
-            " ",
-            PathJoinSubstitution(
-                [FindPackageShare("husky_description"), "mjcf", "husky_scene.xml.xacro"]
-            ),
-            " prefix:=''",
-            " as_two_wheels:=false"
-        ]
-    )
 
     # Get URDF via xacro
     robot_description_content = Command(
@@ -43,7 +29,6 @@ def generate_launch_description():
             " name:=husky",
             " prefix:=''",
             " use_mujoco:=", use_mujoco,
-            " mujoco_scene_xml:='", mujoco_scene_content, "'",
         ]
     )
     robot_description = {"robot_description": ParameterValue(robot_description_content, value_type=str)}
@@ -64,7 +49,12 @@ def generate_launch_description():
     node_controller_manager = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[robot_description, config_husky_velocity_controller],
+        parameters=[
+                config_husky_velocity_controller,
+                robot_description,
+                {'mujoco_scene_xacro_path': PathJoinSubstitution([FindPackageShare("husky_description"), "mjcf", "husky_scene.xml.xacro"]) },
+                {'mujoco_scene_xacro_args': " as_two_wheels:=false"},
+                ],
         output={
             "stdout": "screen",
             "stderr": "screen",
