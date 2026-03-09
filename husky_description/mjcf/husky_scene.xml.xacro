@@ -7,7 +7,7 @@
     <xacro:include filename="$(find husky_description)/mjcf/husky_macro.xml.xacro" />
     <xacro:include filename="$(find husky_description)/mjcf/wheel_actuator.xml.xacro" />
 
-    <compiler angle="radian" meshdir="assets"/>
+    <compiler angle="radian" />
     <option timestep="0.001" integrator="implicit"/>
 
     <statistic center="0.2 0 0.4" extent=".8"/>
@@ -57,7 +57,9 @@
         <body name="root" pos="0 0 0">
             <joint name="world_joint" type="free" stiffness="0" damping="0" frictionloss="0" armature="0" />
             <xacro:husky prefix="$(arg prefix)"
-                         as_two_wheels="$(arg as_two_wheels)"/>
+                         as_two_wheels="$(arg as_two_wheels)">
+                <additional_comp/>
+            </xacro:husky>
         </body>
     </worldbody>
 

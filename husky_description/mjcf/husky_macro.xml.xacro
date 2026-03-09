@@ -24,7 +24,7 @@
   <xacro:include filename="$(find husky_description)/mjcf/wheel.xml.xacro" />
   <xacro:include filename="$(find husky_description)/mjcf/wheel_dummy.xml.xacro" />
 
-    <xacro:macro name="husky" params="prefix as_two_wheels:=false">
+    <xacro:macro name="husky" params="prefix:='' as_two_wheels:=false **additional_comp">
         <body name="${prefix}base_link" pos="0 0 ${wheel_radius - wheel_vertical_offset}">
             <inertial pos="-0.00065 -0.085 0.062"  mass="46.034" fullinertia="0.6022 1.7386 2.0296 -0.02364 -0.1197 -0.001544"/>
             <geom class="visual" pos="0 0 0" type="mesh" mesh="base_link" rgba="0.8 0.8 0.0 1.0"/>
@@ -34,8 +34,10 @@
             <body name="${prefix}base_footprint" pos="0 0 ${wheel_vertical_offset - wheel_radius}">
                 <inertial mass="0.001" pos="0 0 0" diaginertia="1e-6 1e-6 1e-6"/>
             </body>
+            
+            <xacro:insert_block name="additional_comp" />
 
-            <xacro:if value="$(arg as_two_wheels)">
+            <xacro:if value="${as_two_wheels}">
                 <xacro:husky_wheel_dummy wheel_prefix="${prefix}front_left"
                                          xyz="${wheelbase/2.0} ${track/2.0} ${wheel_vertical_offset}" rpy="0 0 0"/>
                 <xacro:husky_wheel_dummy wheel_prefix="${prefix}front_right"
