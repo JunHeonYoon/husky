@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+    <xacro:macro name="husky_sensors" params="prefix">
+        <sensor>
+            <accelerometer name="${prefix}imu_acc" site="${prefix}imu"/>
+            <gyro name="${prefix}imu_gyro" site="${prefix}imu"/>
+            <magnetometer name="${prefix}imu_mag" site="${prefix}imu"/>
+        </sensor>
+    </xacro:macro>
+</robot>

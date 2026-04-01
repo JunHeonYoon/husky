@@ -31,6 +31,8 @@
             <geom class="collision" size="${( base_x_size + husky_front_bumper_extend + husky_rear_bumper_extend)/2 } ${base_y_size/2} ${base_z_size/2/2}" pos="${( husky_front_bumper_extend - husky_rear_bumper_extend ) / 2.0} 0 ${base_z_size/4}" type="box"/>
             <geom class="collision" size="${base_x_size*4/5/2} ${base_y_size/2} ${(base_z_size/2-0.02)/2}" pos="0 0 ${base_z_size*3/4-0.01}" type="box"/>
 
+            <site name="${prefix}imu" size="0.01" pos="0 0 0" />
+            
             <body name="${prefix}base_footprint" pos="0 0 ${wheel_vertical_offset - wheel_radius}">
                 <inertial mass="0.001" pos="0 0 0" diaginertia="1e-6 1e-6 1e-6"/>
             </body>

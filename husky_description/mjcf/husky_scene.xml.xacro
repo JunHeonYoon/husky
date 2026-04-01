@@ -6,6 +6,8 @@
 
     <xacro:include filename="$(find husky_description)/mjcf/husky_macro.xml.xacro" />
     <xacro:include filename="$(find husky_description)/mjcf/wheel_actuator.xml.xacro" />
+    <xacro:include filename="$(find husky_description)/mjcf/sensors.xml.xacro" />
+    <xacro:include filename="$(find husky_description)/mjcf/assets.xml.xacro" />
 
     <compiler angle="radian" />
     <option timestep="0.001" integrator="implicit"/>
@@ -39,16 +41,7 @@
         <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" markrgb="0.8 0.8 0.8" width="300" height="300"/>
         <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
 
-        <material class="husky" name="husky_orange" rgba="0.996 0.941 0.412 1.0"/>
-        <material class="husky" name="husky_black"  rgba="0.231 0.231 0.231 1.0"/>
-
-        <mesh name="base_link"       file="$(find husky_description)/meshes/base_link.stl"/>
-        <mesh name="wheel"           file="$(find husky_description)/meshes/wheel.stl"/>
-        <mesh name="bumper"          file="$(find husky_description)/meshes/bumper.obj"/>
-        <mesh name="top_chassis"     file="$(find husky_description)/meshes/top_chassis.stl"/>
-        <mesh name="top_plate"       file="$(find husky_description)/meshes/top_plate.stl"/>
-        <mesh name="large_top_plate" file="$(find husky_description)/meshes/large_top_plate.obj"/>
-        <mesh name="user_rail"       file="$(find husky_description)/meshes/user_rail.stl"/>
+        <xacro:husky_assets/>
     </asset>
 
     <worldbody>
@@ -65,5 +58,7 @@
 
     <xacro:husky_wheel_actuator prefix="$(arg prefix)"
                                 as_two_wheels="$(arg as_two_wheels)"/>
+
+    <xacro:husky_sensors prefix="$(arg prefix)"/>
 
 </mujoco>

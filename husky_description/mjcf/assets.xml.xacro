@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mujoco xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!-- Shared Husky base assets for MJCF scenes. -->
+    <xacro:macro name="husky_assets" params="">
+        <material class="husky" name="husky_orange" rgba="0.996 0.941 0.412 1.0"/>
+        <material class="husky" name="husky_black"  rgba="0.231 0.231 0.231 1.0"/>
+
+        <mesh name="base_link"       file="$(find husky_description)/meshes/base_link.stl"/>
+        <mesh name="wheel"           file="$(find husky_description)/meshes/wheel.stl"/>
+        <mesh name="bumper"          file="$(find husky_description)/meshes/bumper.obj"/>
+        <mesh name="top_chassis"     file="$(find husky_description)/meshes/top_chassis.stl"/>
+        <mesh name="top_plate"       file="$(find husky_description)/meshes/top_plate.stl"/>
+        <mesh name="large_top_plate" file="$(find husky_description)/meshes/large_top_plate.obj"/>
+        <mesh name="user_rail"       file="$(find husky_description)/meshes/user_rail.stl"/>
+    </xacro:macro>
+</mujoco>
