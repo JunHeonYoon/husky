@@ -1,7 +1,7 @@
 from ament_index_python.packages import get_package_share_directory, PackageNotFoundError
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
-from launch.conditions import UnlessCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     Command, FindExecutable, LaunchConfiguration,
@@ -114,19 +114,25 @@ def generate_launch_description():
     ld.add_action(launch_husky_teleop_joy)
     ld.add_action(launch_husky_accessories)
 
-    # microstrain IMU driver + ZUPT: real hardware only, launch if package is installed
-    # TODO: if the mujoco is launched, do same thing as real hardware so that we can use EKF for state estimation in simulation as well (currently we just use robot_state_publisher with remapping to joint_states topic)
     real_hw = UnlessCondition(PythonExpression(["'", LaunchConfiguration('use_mujoco'), "' == 'true'"]))
+
+    # ZUPT: runs on both real hw and mujoco
+    # Real hw:  microstrain → imu/data → ZUPT → imu/data_zupt → EKF
+    # MuJoCo:   Singleton   → imu/data → ZUPT → imu/data_zupt → EKF
     try:
-        microstrain_launch = get_package_share_directory('microstrain_inertial_driver')
-        imu_zupt_script    = get_package_share_directory('husky_control')
-        ld.add_action(IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(microstrain_launch + '/launch/microstrain_launch.py'),
-            condition=real_hw,
-        ))
+        imu_zupt_script = get_package_share_directory('husky_control')
         ld.add_action(ExecuteProcess(
             cmd=['python3', imu_zupt_script + '/scripts/imu_zupt.py'],
             output='screen',
+        ))
+    except PackageNotFoundError:
+        pass
+
+    # microstrain IMU driver: real hardware only
+    try:
+        microstrain_launch = get_package_share_directory('microstrain_inertial_driver')
+        ld.add_action(IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(microstrain_launch + '/launch/microstrain_launch.py'),
             condition=real_hw,
         ))
     except PackageNotFoundError:
