@@ -1,9 +1,11 @@
+from ament_index_python.packages import get_package_share_directory, PackageNotFoundError
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription
+from launch.conditions import UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     Command, FindExecutable, LaunchConfiguration,
-    PathJoinSubstitution
+    PathJoinSubstitution, PythonExpression
 )
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
@@ -55,6 +57,9 @@ def generate_launch_description():
                 {'mujoco_scene_xacro_path': PathJoinSubstitution([FindPackageShare("husky_description"), "mjcf", "husky_scene.xml.xacro"]) },
                 {'mujoco_scene_xacro_args': " as_two_wheels:=false"},
                 ],
+        remappings=[
+            ('/husky_velocity_controller/odom', '/odom'),
+        ],
         output={
             "stdout": "screen",
             "stderr": "screen",
@@ -108,5 +113,23 @@ def generate_launch_description():
     ld.add_action(launch_husky_teleop_base)
     ld.add_action(launch_husky_teleop_joy)
     ld.add_action(launch_husky_accessories)
+
+    # microstrain IMU driver + ZUPT: real hardware only, launch if package is installed
+    # TODO: if the mujoco is launched, do same thing as real hardware so that we can use EKF for state estimation in simulation as well (currently we just use robot_state_publisher with remapping to joint_states topic)
+    real_hw = UnlessCondition(PythonExpression(["'", LaunchConfiguration('use_mujoco'), "' == 'true'"]))
+    try:
+        microstrain_launch = get_package_share_directory('microstrain_inertial_driver')
+        imu_zupt_script    = get_package_share_directory('husky_control')
+        ld.add_action(IncludeLaunchDescription(
+            PythonLaunchDescriptionSource(microstrain_launch + '/launch/microstrain_launch.py'),
+            condition=real_hw,
+        ))
+        ld.add_action(ExecuteProcess(
+            cmd=['python3', imu_zupt_script + '/scripts/imu_zupt.py'],
+            output='screen',
+            condition=real_hw,
+        ))
+    except PackageNotFoundError:
+        pass
 
     return ld
