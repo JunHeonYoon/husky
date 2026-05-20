@@ -47,6 +47,17 @@
     <xacro:property name="wheel_length" value="0.1143" />
     <xacro:property name="wheel_radius" value="0.1651" />
 
+    <!-- Aggregate collision box covering the base and all wheels -->
+    <xacro:property name="base_wheel_collision_x_min" value="${min(-(base_x_size / 2.0 + husky_rear_bumper_extend), -(wheelbase / 2.0 + wheel_radius))}" />
+    <xacro:property name="base_wheel_collision_x_max" value="${max(base_x_size / 2.0 + husky_front_bumper_extend, wheelbase / 2.0 + wheel_radius)}" />
+    <xacro:property name="base_wheel_collision_y_size" value="${2.0 * max(base_y_size / 2.0, track / 2.0 + wheel_length / 2.0)}" />
+    <xacro:property name="base_wheel_collision_z_min" value="${min(0.0, wheel_vertical_offset - wheel_radius)}" />
+    <xacro:property name="base_wheel_collision_z_max" value="${max(base_z_size, wheel_vertical_offset + wheel_radius)}" />
+    <xacro:property name="base_wheel_collision_x_size" value="${base_wheel_collision_x_max - base_wheel_collision_x_min}" />
+    <xacro:property name="base_wheel_collision_z_size" value="${base_wheel_collision_z_max - base_wheel_collision_z_min}" />
+    <xacro:property name="base_wheel_collision_x_origin" value="${(base_wheel_collision_x_max + base_wheel_collision_x_min) / 2.0}" />
+    <xacro:property name="base_wheel_collision_z_origin" value="${(base_wheel_collision_z_max + base_wheel_collision_z_min) / 2.0}" />
+
     <!-- Base link is the center of the robot's bottom plate -->
     <link name="${prefix}base_link">
       <visual>
@@ -68,6 +79,21 @@
         </geometry>
       </collision>
     </link>
+
+    <link name="${prefix}base_wheel_collision_box_link">
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <box size="${base_wheel_collision_x_size} ${base_wheel_collision_y_size} ${base_wheel_collision_z_size}" />
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${prefix}base_wheel_collision_box_joint" type="fixed">
+      <origin xyz="${base_wheel_collision_x_origin} 0 ${base_wheel_collision_z_origin}" rpy="0 0 0" />
+      <parent link="${prefix}base_link" />
+      <child link="${prefix}base_wheel_collision_box_link" />
+    </joint>
 
     <!-- Base footprint is on the ground under the robot -->
     <link name="${prefix}base_footprint"/>
