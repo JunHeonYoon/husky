@@ -24,6 +24,7 @@
   <xacro:include filename="$(find husky_description)/urdf/decorations.urdf.xacro" />
   <xacro:include filename="$(find husky_description)/urdf/wheel.urdf.xacro" />
   <xacro:include filename="$(find husky_description)/urdf/wheel_dummy.urdf.xacro" />
+  <xacro:include filename="$(find husky_description)/urdf/wheel_fixed.urdf.xacro" />
 
   <xacro:include filename="$(find husky_description)/urdf/accessories/intel_realsense.urdf.xacro"/>
   <!-- <xacro:include filename="$(find husky_description)/urdf/accessories/sick_lms1xx_mount.urdf.xacro"/> -->
@@ -31,7 +32,7 @@
 
   <xacro:property name="M_PI" value="3.14159"/>
 
-  <xacro:macro name="husky" params="prefix as_two_wheels:=false">
+  <xacro:macro name="husky" params="prefix as_two_wheels:=false fixed_wheels:=false">
 
     <!-- Base Size -->
     <xacro:property name="base_x_size" value="0.98740000" />
@@ -138,51 +139,68 @@
     </joint>
 
 
-    <xacro:if value="$(arg as_two_wheels)">
-        <xacro:husky_wheel_dummy wheel_prefix="${prefix}front_left">
-            <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-        </xacro:husky_wheel_dummy>
-        <xacro:husky_wheel_dummy wheel_prefix="${prefix}front_right">
-            <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-        </xacro:husky_wheel_dummy>
-        <xacro:husky_wheel_dummy wheel_prefix="${prefix}rear_left">
-            <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-        </xacro:husky_wheel_dummy>
-        <xacro:husky_wheel_dummy wheel_prefix="${prefix}rear_right">
-            <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-        </xacro:husky_wheel_dummy>
-        <link name="${prefix}left_wheel"/>
-        <joint name="${prefix}left_wheel_joint" type="revolute">
-            <parent link="base_link"/>
-            <child link="${prefix}left_wheel"/>
-            <origin xyz="0 ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-            <axis rpy="0 0 0" xyz="0 1 0"/>
-            <limit effort="100.0" lower="-3.141592" upper="3.141592" velocity="1000"/>
-        </joint>
-        <link name="${prefix}right_wheel"/>
-        <joint name="${prefix}right_wheel_joint" type="revolute">
-            <parent link="base_link"/>
-            <child link="${prefix}right_wheel"/>
-            <origin xyz="0 ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-            <axis rpy="0 0 0" xyz="0 1 0"/>
-            <limit effort="100.0" lower="-3.141592" upper="3.141592" velocity="1000"/>
-        </joint>
+    <xacro:if value="${fixed_wheels}">
+      <xacro:husky_wheel_fixed wheel_prefix="${prefix}front_left">
+        <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+      </xacro:husky_wheel_fixed>
+      <xacro:husky_wheel_fixed wheel_prefix="${prefix}front_right">
+        <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+      </xacro:husky_wheel_fixed>
+      <xacro:husky_wheel_fixed wheel_prefix="${prefix}rear_left">
+        <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+      </xacro:husky_wheel_fixed>
+      <xacro:husky_wheel_fixed wheel_prefix="${prefix}rear_right">
+        <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+      </xacro:husky_wheel_fixed>
     </xacro:if>
-    <xacro:unless value="$(arg as_two_wheels)">
-        <!-- Husky wheel macros -->
-        <xacro:husky_wheel wheel_prefix="${prefix}front_left">
-            <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-        </xacro:husky_wheel>
-        <xacro:husky_wheel wheel_prefix="${prefix}front_right">
-            <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-        </xacro:husky_wheel>
-        <xacro:husky_wheel wheel_prefix="${prefix}rear_left">
-            <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-        </xacro:husky_wheel>
-        <xacro:husky_wheel wheel_prefix="${prefix}rear_right">
-            <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
-        </xacro:husky_wheel>
+    <xacro:unless value="${fixed_wheels}">
+      <xacro:if value="${as_two_wheels}">
+          <xacro:husky_wheel_dummy wheel_prefix="${prefix}front_left">
+              <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+          </xacro:husky_wheel_dummy>
+          <xacro:husky_wheel_dummy wheel_prefix="${prefix}front_right">
+              <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+          </xacro:husky_wheel_dummy>
+          <xacro:husky_wheel_dummy wheel_prefix="${prefix}rear_left">
+              <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+          </xacro:husky_wheel_dummy>
+          <xacro:husky_wheel_dummy wheel_prefix="${prefix}rear_right">
+              <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+          </xacro:husky_wheel_dummy>
+          <link name="${prefix}left_wheel"/>
+          <joint name="${prefix}left_wheel_joint" type="revolute">
+              <parent link="base_link"/>
+              <child link="${prefix}left_wheel"/>
+              <origin xyz="0 ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+              <axis rpy="0 0 0" xyz="0 1 0"/>
+              <limit effort="100.0" lower="-3.141592" upper="3.141592" velocity="1000"/>
+          </joint>
+          <link name="${prefix}right_wheel"/>
+          <joint name="${prefix}right_wheel_joint" type="revolute">
+              <parent link="base_link"/>
+              <child link="${prefix}right_wheel"/>
+              <origin xyz="0 ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+              <axis rpy="0 0 0" xyz="0 1 0"/>
+              <limit effort="100.0" lower="-3.141592" upper="3.141592" velocity="1000"/>
+          </joint>
+      </xacro:if>
+      <xacro:unless value="${as_two_wheels}">
+          <!-- Husky wheel macros -->
+          <xacro:husky_wheel wheel_prefix="${prefix}front_left">
+              <origin xyz="${wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+          </xacro:husky_wheel>
+          <xacro:husky_wheel wheel_prefix="${prefix}front_right">
+              <origin xyz="${wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+          </xacro:husky_wheel>
+          <xacro:husky_wheel wheel_prefix="${prefix}rear_left">
+              <origin xyz="${-wheelbase/2} ${track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+          </xacro:husky_wheel>
+          <xacro:husky_wheel wheel_prefix="${prefix}rear_right">
+              <origin xyz="${-wheelbase/2} ${-track/2} ${wheel_vertical_offset}" rpy="0 0 0" />
+          </xacro:husky_wheel>
+      </xacro:unless>
     </xacro:unless>
+
 
     <xacro:husky_decorate />
 
@@ -224,66 +242,68 @@
     </xacro:if>
 
     <!-- TODO: if value="$(arg as_two_wheels)"-->
-    <xacro:unless value="$(arg as_two_wheels)">
-        <ros2_control name="${prefix}husky_hardware" type="system">
-          <hardware>
-            <xacro:unless value="$(arg use_mujoco)">
-              <xacro:unless value="$(arg is_sim)">
-                <plugin>husky_base/HuskyHardware</plugin>
-                <param name="wheel_diameter">0.3302</param>
-                <param name="max_accel">5.0</param>
-                <param name="max_speed">1.0</param>
-                <param name="polling_timeout">10.0</param>
-                <param name="serial_port">/dev/ttyUSB0</param>
-                <param name="io_rate">100.0</param>
+    <xacro:unless value="${fixed_wheels}">
+      <xacro:unless value="${as_two_wheels}">
+          <ros2_control name="${prefix}husky_hardware" type="system">
+            <hardware>
+              <xacro:unless value="$(arg use_mujoco)">
+                <xacro:unless value="$(arg is_sim)">
+                  <plugin>husky_base/HuskyHardware</plugin>
+                  <param name="wheel_diameter">0.3302</param>
+                  <param name="max_accel">5.0</param>
+                  <param name="max_speed">1.0</param>
+                  <param name="polling_timeout">10.0</param>
+                  <param name="serial_port">/dev/ttyUSB0</param>
+                  <param name="io_rate">100.0</param>
+                </xacro:unless>
               </xacro:unless>
-            </xacro:unless>
-
-            <xacro:if value="$(arg is_sim)">
-              <plugin>gazebo_ros2_control/GazeboSystem</plugin>
-            </xacro:if>
-
-            <xacro:if value="$(arg use_mujoco)">
-              <plugin>mujoco_ros_hardware/MujocoHardwareInterface</plugin>
-              <param name="robot_type">husky</param>
-              <param name="wheel_diameter">0.3302</param>
-              <param name="max_speed">1.0</param>
-            </xacro:if>
-
-          </hardware>
-          <joint name="${prefix}front_left_wheel_joint">
-            <command_interface name="velocity">
-              <param name="min">-1</param>
-              <param name="max">1</param>
-            </command_interface>
-            <state_interface name="position"/>
-            <state_interface name="velocity"/>
-          </joint>
-          <joint name="${prefix}rear_left_wheel_joint">
-            <command_interface name="velocity">
-              <param name="min">-1</param>
-              <param name="max">1</param>
-            </command_interface>
-            <state_interface name="position"/>
-            <state_interface name="velocity"/>
-          </joint>
-          <joint name="${prefix}front_right_wheel_joint">
-            <command_interface name="velocity">
-              <param name="min">-1</param>
-              <param name="max">1</param>
-            </command_interface>
-            <state_interface name="position"/>
-            <state_interface name="velocity"/>
-          </joint>
-          <joint name="${prefix}rear_right_wheel_joint">
-            <command_interface name="velocity">
-              <param name="min">-1</param>
-              <param name="max">1</param>
-            </command_interface>
-            <state_interface name="position"/>
-            <state_interface name="velocity"/>
-          </joint>
-        </ros2_control>
+  
+              <xacro:if value="$(arg is_sim)">
+                <plugin>gazebo_ros2_control/GazeboSystem</plugin>
+              </xacro:if>
+  
+              <xacro:if value="$(arg use_mujoco)">
+                <plugin>mujoco_ros_hardware/MujocoHardwareInterface</plugin>
+                <param name="robot_type">husky</param>
+                <param name="wheel_diameter">0.3302</param>
+                <param name="max_speed">1.0</param>
+              </xacro:if>
+  
+            </hardware>
+            <joint name="${prefix}front_left_wheel_joint">
+              <command_interface name="velocity">
+                <param name="min">-1</param>
+                <param name="max">1</param>
+              </command_interface>
+              <state_interface name="position"/>
+              <state_interface name="velocity"/>
+            </joint>
+            <joint name="${prefix}rear_left_wheel_joint">
+              <command_interface name="velocity">
+                <param name="min">-1</param>
+                <param name="max">1</param>
+              </command_interface>
+              <state_interface name="position"/>
+              <state_interface name="velocity"/>
+            </joint>
+            <joint name="${prefix}front_right_wheel_joint">
+              <command_interface name="velocity">
+                <param name="min">-1</param>
+                <param name="max">1</param>
+              </command_interface>
+              <state_interface name="position"/>
+              <state_interface name="velocity"/>
+            </joint>
+            <joint name="${prefix}rear_right_wheel_joint">
+              <command_interface name="velocity">
+                <param name="min">-1</param>
+                <param name="max">1</param>
+              </command_interface>
+              <state_interface name="position"/>
+              <state_interface name="velocity"/>
+            </joint>
+          </ros2_control>
+      </xacro:unless>
     </xacro:unless>
 
   </xacro:macro>
